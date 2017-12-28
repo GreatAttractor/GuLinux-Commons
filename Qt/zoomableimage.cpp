@@ -44,7 +44,7 @@ public:
   public:
     GraphicsView(ZoomableImage *q, QWidget *parent = nullptr);
     enum ZoomMode {FreeZoom, RealSize, FitToWindow} zoomMode = RealSize;
-    bool selectionMode = false;
+    SelectionMode selectionMode = SelectionMode::None;
     QRectF selectionRect;
     QGraphicsRectItem *selection = nullptr;
   protected:
@@ -97,7 +97,7 @@ ZoomableImage::ZoomableImage(bool embed_toolbar, QWidget* parent) : QWidget(pare
   d->view->setScene(&d->scene);
   d->view->setDragMode(QGraphicsView::ScrollHandDrag);
   connect(d->view, &QGraphicsView::rubberBandChanged, [=](QRect a,const QPointF &sceneStart, const QPointF &sceneEnd){
-    if(!d->view->selectionMode || a.isEmpty())
+    if(d->view->selectionMode != SelectionMode::Rect || a.isEmpty())
       return;
     d->view->selectionRect = QRectF(sceneStart, sceneEnd);
   });
@@ -142,27 +142,45 @@ QToolBar* ZoomableImage::toolbar() const
 }
 
 
-
-
-
-void ZoomableImage::startSelectionMode()
+void ZoomableImage::startSelectionMode(SelectionMode mode)
 {
-  clearROI();
-  d->view->selectionMode = true;
-  d->view->setDragMode(QGraphicsView::RubberBandDrag);
+    d->view->selectionMode = mode;
+    switch (mode)
+    {
+    case SelectionMode::Rect:
+        clearROI();
+        d->view->setDragMode(QGraphicsView::RubberBandDrag);
+        break;
+
+    case SelectionMode::Point:
+        clearROI();
+        d->view->setDragMode(QGraphicsView::NoDrag);
+        break;
+    }
 }
 
 void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
 {
-  if(selectionMode) {
-    selectionMode = false;
-    selection = scene()->addRect(selectionRect, {Qt::green}, {QColor{0, 250, 250, 20}});
-    selection->setZValue(1);
-    qDebug() << "rect: " << selectionRect << ", " << selection->rect();
-    q->selectedROI(selection->rect());
-  }
-  QGraphicsView::mouseReleaseEvent(e);
-  setDragMode(QGraphicsView::ScrollHandDrag);
+    switch (selectionMode)
+    {
+    case SelectionMode::Rect:
+        selectionMode = SelectionMode::None;
+        selection = scene()->addRect(selectionRect, {Qt::green}, {QColor{0, 250, 250, 20}});
+        selection->setZValue(1);
+        qDebug() << "rect: " << selectionRect << ", " << selection->rect();
+        q->selectedROI(selection->rect());
+        break;
+
+    case SelectionMode::Point:
+        selectionMode = SelectionMode::None;
+        const QPointF scenePoint = mapToScene(e->pos());
+        qDebug() << "point: " << scenePoint;
+        q->selectedPoint(scenePoint);
+        break;
+    }
+
+    QGraphicsView::mouseReleaseEvent(e);
+    setDragMode(QGraphicsView::ScrollHandDrag);
 }
 
 

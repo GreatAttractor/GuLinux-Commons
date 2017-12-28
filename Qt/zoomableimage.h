@@ -37,6 +37,9 @@ class ZoomableImage : public QWidget
 {
 Q_OBJECT
 public:
+
+    enum class SelectionMode { None, Rect, Point };
+
    ~ZoomableImage();
    ZoomableImage(bool embed_toolbar = true, QWidget* parent = 0);
    QRect roi() const;
@@ -55,13 +58,14 @@ public slots:
   void absoluteScale(double factor);
   void fitToWindow();
   void normalSize();
-  void startSelectionMode();
+  void startSelectionMode(SelectionMode mode);
   void clearROI();
 protected:
     virtual void resizeEvent(QResizeEvent * e);
 signals:
   void selectedROI(const QRectF &);
   void zoomLevelChanged(double);
+  void selectedPoint(const QPointF &);
 private:
   DPTR
 };

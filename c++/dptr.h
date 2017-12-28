@@ -45,8 +45,22 @@ private:
 
 #endif // __cplusplus
 
+#define DPTR \
+    struct Private; \
+    friend struct Private; \
+    const std::unique_ptr<Private> d;
+
+//TODO: adapt also for < C++11
+#define DPTR_CUST_DEL \
+    struct Private; \
+    friend struct Private; \
+    struct PrivateDeleter { void operator()(Private *p); }; \
+    const std::unique_ptr<Private, PrivateDeleter> d;
+
 #define DPTR_IMPL(_class) struct _class::Private
-#define DPTR struct Private; friend struct Private; const UniqueDPTR<Private> d;
+
+/// If a class declares DPTR_CUST_DEL, it must then define DPTR_IMPL and DPTR_DEL
+#define DPTR_DEL(_class) void _class::PrivateDeleter::operator()(_class::Private *p) { delete p; }
+
 
 #endif // CPP_DPTR_H
-
