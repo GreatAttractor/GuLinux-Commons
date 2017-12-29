@@ -46,9 +46,10 @@ public:
     enum ZoomMode {FreeZoom, RealSize, FitToWindow} zoomMode = RealSize;
     SelectionMode selectionMode = SelectionMode::None;
     QRectF selectionRect;
-    QGraphicsRectItem *selection = nullptr;
+
   protected:
     virtual void mouseReleaseEvent(QMouseEvent*e);
+
   private:
     ZoomableImage *q;
   };
@@ -63,6 +64,9 @@ public:
   double current_zoom() const;
   void set_zoom_level(double ratio, GraphicsView::ZoomMode zoom_mode);
   QGraphicsPixmapItem *imageItem = nullptr;
+
+    /// Function to draw an informational overlay on the zoomed image
+    OverlayPainter ovlPainter = nullptr;
 };
 
 ZoomableImage::Private::GraphicsView::GraphicsView(ZoomableImage *q, QWidget* parent) : QGraphicsView(parent), q{q}
@@ -165,10 +169,8 @@ void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
     {
     case SelectionMode::Rect:
         selectionMode = SelectionMode::None;
-        selection = scene()->addRect(selectionRect, {Qt::green}, {QColor{0, 250, 250, 20}});
-        selection->setZValue(1);
-        qDebug() << "rect: " << selectionRect << ", " << selection->rect();
-        q->selectedROI(selection->rect());
+        qDebug() << "rect: " << selectionRect;
+        q->selectedROI(selectionRect);
         break;
 
     case SelectionMode::Point:
@@ -183,6 +185,20 @@ void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
     setDragMode(QGraphicsView::ScrollHandDrag);
 }
 
+
+//void ZoomableImage::Private::GraphicsView::paintEvent(QPaintEvent *event)
+//{
+//    QGraphicsView::paintEvent(event);
+
+//    QPainter painter;
+//    painter.setBackgroundMode(Qt::TransparentMode);
+//    painter.setCompositionMode()
+//    painter.begin(viewport());
+
+//    painter.setPen(Qt::black);
+//    QRect rect = QRect(20, 20, 70, 40);
+//    painter.drawRect(rect);
+//}
 
 
 void ZoomableImage::setImage(const QImage& image)
@@ -210,9 +226,6 @@ QRect ZoomableImage::roi() const
 
 void ZoomableImage::clearROI()
 {
-  d->scene.removeItem(d->view->selection);
-  delete d->view->selection;
-  d->view->selection = 0;
   d->view->selectionRect = {};
 }
 
@@ -256,3 +269,9 @@ void ZoomableImage::setOpenGL() {
   d->view->setViewport(new QGLWidget);
 }
 #endif
+
+
+void ZoomableImage::setOverlayPainter(OverlayPainter ovlPainter)
+{
+    d->ovlPainter = ovlPainter;
+}

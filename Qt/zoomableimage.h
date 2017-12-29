@@ -22,6 +22,7 @@
 
 #include <QWidget>
 #include <QRect>
+#include <functional>
 #include <memory>
 #include "c++/dptr.h"
 #ifdef HAVE_QT5_OPENGL
@@ -40,6 +41,8 @@ public:
 
     enum class SelectionMode { None, Rect, Point };
 
+    using OverlayPainter = std::function<void (const QImage&)>;
+
    ~ZoomableImage();
    ZoomableImage(bool embed_toolbar = true, QWidget* parent = 0);
    QRect roi() const;
@@ -52,6 +55,9 @@ public:
 #ifdef HAVE_QT5_OPENGL
   void setOpenGL();
 #endif
+
+  void setOverlayPainter(OverlayPainter ovlPainter);
+
 public slots:
   void setImage(const QImage &image);
   void scale(double factor);
