@@ -63,7 +63,7 @@ public slots:
 protected:
     virtual void resizeEvent(QResizeEvent * e);
 signals:
-  void selectedROI(const QRectF &);
+  void selectedRect(const QRectF &);
   void zoomLevelChanged(double);
   void selectedPoint(const QPointF &);
 private:

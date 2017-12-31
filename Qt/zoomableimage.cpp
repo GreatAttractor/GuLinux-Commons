@@ -166,7 +166,7 @@ void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
     case SelectionMode::Rect:
         selectionMode = SelectionMode::None;
         qDebug() << "rect: " << selectionRect;
-        q->selectedROI(selectionRect);
+        q->selectedRect(selectionRect);
         break;
 
     case SelectionMode::Point:
