@@ -155,6 +155,7 @@ void ZoomableImage::startSelectionMode(SelectionMode mode)
 
     case SelectionMode::Point:
         clearROI();
+        d->view->setCursor(QCursor{Qt::CrossCursor});
         d->view->setDragMode(QGraphicsView::NoDrag);
         break;
     }
