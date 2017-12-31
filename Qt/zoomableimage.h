@@ -42,7 +42,6 @@ public:
 
    ~ZoomableImage();
    ZoomableImage(bool embed_toolbar = true, QWidget* parent = 0);
-   QRect roi() const;
    QGraphicsScene *scene() const;
   QToolBar *toolbar() const;
   enum Actions {ZoomIn, ZoomOut, ZoomFit, ZoomRealSize};
@@ -60,7 +59,7 @@ public slots:
   void fitToWindow();
   void normalSize();
   void startSelectionMode(SelectionMode mode);
-  void clearROI();
+
 protected:
     virtual void resizeEvent(QResizeEvent * e);
 signals:

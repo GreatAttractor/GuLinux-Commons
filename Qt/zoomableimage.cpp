@@ -149,12 +149,10 @@ void ZoomableImage::startSelectionMode(SelectionMode mode)
     switch (mode)
     {
     case SelectionMode::Rect:
-        clearROI();
         d->view->setDragMode(QGraphicsView::RubberBandDrag);
         break;
 
     case SelectionMode::Point:
-        clearROI();
         d->view->setCursor(QCursor{Qt::CrossCursor});
         d->view->setDragMode(QGraphicsView::NoDrag);
         break;
@@ -199,16 +197,6 @@ void ZoomableImage::setImage(const QImage& image)
   d->imageItem->setTransformationMode(d->transformation_mode);
   d->scene.setSceneRect(0, 0, image.size().width(), image.size().height());
   d->imageItem->setZValue(0);
-}
-
-QRect ZoomableImage::roi() const
-{
-  return d->view->selectionRect.toRect();
-}
-
-void ZoomableImage::clearROI()
-{
-  d->view->selectionRect = {};
 }
 
 void ZoomableImage::resizeEvent(QResizeEvent* e)
