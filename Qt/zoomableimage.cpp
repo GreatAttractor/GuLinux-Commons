@@ -57,13 +57,14 @@ public:
   GraphicsView *view;
   ZoomableImage *q;
   QGraphicsScene scene;
-  QRect imageSize;
+  QRect imageDisplaySize;
   QToolBar* toolbar;
   QMap<Actions, QAction*> actions;
   Qt::TransformationMode transformation_mode = Qt::SmoothTransformation;
   double current_zoom() const;
   void set_zoom_level(double ratio, GraphicsView::ZoomMode zoom_mode);
   QGraphicsPixmapItem *imageItem = nullptr;
+  QTransform imgTransform;
 };
 
 ZoomableImage::Private::GraphicsView::GraphicsView(ZoomableImage *q, QWidget* parent) : QGraphicsView(parent), q{q}
@@ -108,7 +109,7 @@ ZoomableImage::ZoomableImage(bool embed_toolbar, QWidget* parent) : QWidget(pare
 void ZoomableImage::fitToWindow()
 {
   d->view->zoomMode = Private::GraphicsView::FitToWindow;
-  d->view->fitInView(d->imageSize, Qt::KeepAspectRatio);
+  d->view->fitInView(d->imageDisplaySize, Qt::KeepAspectRatio);
   emit zoomLevelChanged(zoomLevel());
 }
 
@@ -192,10 +193,12 @@ void ZoomableImage::setImage(const QImage& image)
     d->imageItem = nullptr;
     return;
   }
-  d->imageSize = image.rect();
+  d->imageDisplaySize = d->imgTransform.mapRect(image.rect());
   d->imageItem = d->scene.addPixmap(QPixmap::fromImage(image));
   d->imageItem->setTransformationMode(d->transformation_mode);
-  d->scene.setSceneRect(0, 0, image.size().width(), image.size().height());
+  d->imageItem->setTransform(d->imgTransform);
+
+  d->scene.setSceneRect(0, 0, d->imageDisplaySize.width(), d->imageDisplaySize.height());
   d->imageItem->setZValue(0);
 }
 
@@ -219,13 +222,17 @@ QMap< ZoomableImage::Actions, QAction* > ZoomableImage::actions() const
 
 double ZoomableImage::Private::current_zoom() const
 {
-  return std::max(view->transform().m11(), view->transform().m21());
+  return std::max(imgTransform.m11(), imgTransform.m21());
 }
 
 void ZoomableImage::Private::set_zoom_level(double ratio, GraphicsView::ZoomMode zoom_mode)
 {
   view->zoomMode = zoom_mode;
-  view->setTransform({ratio, 0, 0, ratio, 0, 0});
+  //view->setTransform({ratio, 0, 0, ratio, 0, 0});
+  imgTransform = QTransform{ ratio, 0, 0, ratio, 0, 0 };
+  if (imageItem)
+      imageItem->setTransform(imgTransform);
+
   emit q->zoomLevelChanged(q->zoomLevel());
 }
 

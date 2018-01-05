@@ -54,7 +54,10 @@ public:
 
 public slots:
   void setImage(const QImage &image);
+
+  /// Changes the current image scale by 'factor'
   void scale(double factor);
+
   void absoluteScale(double factor);
   void fitToWindow();
   void normalSize();
