@@ -124,7 +124,11 @@ void ZoomableImage::fitToWindow()
 {
   d->view->zoomMode = Private::GraphicsView::FitToWindow;
 
-  const auto viewRect = d->view->rect();
+  auto viewRect = d->view->rect();
+
+  // Adjustment as performed in QGraphicsView::fitInView(), to make sure it really fits
+  constexpr int MARGIN = 2;
+  viewRect.adjust(MARGIN, MARGIN, -MARGIN, -MARGIN);
 
   const double scaleFitWidth = (double)viewRect.width() / d->imageItem->boundingRect().width();
   const double scaleFitHeight = (double)viewRect.height() / d->imageItem->boundingRect().height();
