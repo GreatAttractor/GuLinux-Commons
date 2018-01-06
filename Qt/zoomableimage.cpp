@@ -243,6 +243,12 @@ QGraphicsScene* ZoomableImage::scene() const
 }
 
 
+const QTransform &ZoomableImage::getImgTransform() const
+{
+    return d->imgTransform;
+}
+
+
 QMap< ZoomableImage::Actions, QAction* > ZoomableImage::actions() const
 {
   return d->actions;

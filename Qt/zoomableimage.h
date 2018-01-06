@@ -42,7 +42,14 @@ public:
 
    ~ZoomableImage();
    ZoomableImage(bool embed_toolbar = true, QWidget* parent = 0);
+
+   /// When adding items to the scene, account for the current image zoom level (e.g. by using 'getImgTransform()')
    QGraphicsScene *scene() const;
+
+   /// Returns the current transform used for displaying the image
+   /** Meant to be applied to points & rects obtained from 'selectedRect' and 'selectedPoint' signals. */
+   const QTransform &getImgTransform() const;
+
   QToolBar *toolbar() const;
   enum Actions {ZoomIn, ZoomOut, ZoomFit, ZoomRealSize};
   QMap<Actions, QAction*> actions() const;
@@ -66,9 +73,9 @@ public slots:
 protected:
     virtual void resizeEvent(QResizeEvent * e);
 signals:
-  void selectedRect(const QRectF &);
+  void selectedRect(const QRectF &); ///< Passes a rectangle in image space
   void zoomLevelChanged(double);
-  void selectedPoint(const QPointF &);
+  void selectedPoint(const QPointF &); ///< Passes a point in image space
 private:
   DPTR
 };
