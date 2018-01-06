@@ -59,7 +59,6 @@ public:
   GraphicsView *view;
   ZoomableImage *q;
   QGraphicsScene scene;
-  QRect imageDisplaySize;
   QToolBar* toolbar;
   QMap<Actions, QAction*> actions;
   Qt::TransformationMode transformation_mode = Qt::SmoothTransformation;
@@ -67,7 +66,18 @@ public:
   void set_zoom_level(double ratio, GraphicsView::ZoomMode zoom_mode);
   QGraphicsPixmapItem *imageItem = nullptr;
   QTransform imgTransform;
+
+    /// Updates scene rectangle to reflect the current image zoom level
+    void updateSceneRect();
 };
+
+
+void ZoomableImage::Private::updateSceneRect()
+{
+    const auto imgDisplaySize = imgTransform.mapRect(imageItem->boundingRect()).size();
+    scene.setSceneRect(0, 0, imgDisplaySize.width(), imgDisplaySize.height());
+}
+
 
 ZoomableImage::Private::GraphicsView::GraphicsView(ZoomableImage *q, QWidget* parent) : QGraphicsView(parent), q{q}
 {
@@ -113,14 +123,25 @@ ZoomableImage::ZoomableImage(bool embed_toolbar, QWidget* parent) : QWidget(pare
 void ZoomableImage::fitToWindow()
 {
   d->view->zoomMode = Private::GraphicsView::FitToWindow;
-  d->view->fitInView(d->imageDisplaySize, Qt::KeepAspectRatio);
+
+  const auto viewRect = d->view->rect();
+
+  const double scaleFitWidth = (double)viewRect.width() / d->imageItem->boundingRect().width();
+  const double scaleFitHeight = (double)viewRect.height() / d->imageItem->boundingRect().height();
+  const double scale = std::min(scaleFitWidth, scaleFitHeight);
+
+  d->imgTransform = QTransform{ scale, 0, 0, scale, 0, 0 };
+  d->imageItem->setTransform(d->imgTransform);
+
+  d->updateSceneRect();
+
   emit zoomLevelChanged(zoomLevel());
 }
 
 
 double ZoomableImage::zoomLevel() const
 {
-  return d->view->transform().m11();
+    return d->current_zoom();
 }
 
 
@@ -197,12 +218,11 @@ void ZoomableImage::setImage(const QImage& image)
     d->imageItem = nullptr;
     return;
   }
-  d->imageDisplaySize = d->imgTransform.mapRect(image.rect());
+
   d->imageItem = d->scene.addPixmap(QPixmap::fromImage(image));
   d->imageItem->setTransformationMode(d->transformation_mode);
   d->imageItem->setTransform(d->imgTransform);
-
-  d->scene.setSceneRect(0, 0, d->imageDisplaySize.width(), d->imageDisplaySize.height());
+  d->updateSceneRect();
   d->imageItem->setZValue(0);
 }
 
@@ -234,7 +254,10 @@ void ZoomableImage::Private::set_zoom_level(double ratio, GraphicsView::ZoomMode
   view->zoomMode = zoom_mode;
   imgTransform = QTransform{ ratio, 0, 0, ratio, 0, 0 };
   if (imageItem)
+  {
       imageItem->setTransform(imgTransform);
+      updateSceneRect();
+  }
 
   emit q->zoomLevelChanged(q->zoomLevel());
 }
