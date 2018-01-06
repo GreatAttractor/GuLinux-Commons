@@ -45,6 +45,8 @@ public:
     GraphicsView(ZoomableImage *q, QWidget *parent = nullptr);
     enum ZoomMode {FreeZoom, RealSize, FitToWindow} zoomMode = RealSize;
     SelectionMode selectionMode = SelectionMode::None;
+
+    /// Selection rectangle in image space
     QRectF selectionRect;
 
   protected:
@@ -101,7 +103,9 @@ ZoomableImage::ZoomableImage(bool embed_toolbar, QWidget* parent) : QWidget(pare
   connect(d->view, &QGraphicsView::rubberBandChanged, [=](QRect a,const QPointF &sceneStart, const QPointF &sceneEnd){
     if(d->view->selectionMode != SelectionMode::Rect || a.isEmpty())
       return;
-    d->view->selectionRect = QRectF(sceneStart, sceneEnd);
+    const QTransform imgInvT = d->imgTransform.inverted();
+    d->view->selectionRect = QRectF(imgInvT.map(sceneStart),
+                                    imgInvT.map(sceneEnd));
   });
   d->view->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform );
 }
@@ -172,9 +176,9 @@ void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
 
     case SelectionMode::Point:
         selectionMode = SelectionMode::None;
-        const QPointF scenePoint = mapToScene(e->pos());
-        qDebug() << "point: " << scenePoint;
-        q->selectedPoint(scenePoint);
+        const QPointF imgPoint = q->d->imgTransform.inverted().map(mapToScene(e->pos()));
+        qDebug() << "point: " << imgPoint;
+        q->selectedPoint(imgPoint);
         break;
     }
 
@@ -228,7 +232,6 @@ double ZoomableImage::Private::current_zoom() const
 void ZoomableImage::Private::set_zoom_level(double ratio, GraphicsView::ZoomMode zoom_mode)
 {
   view->zoomMode = zoom_mode;
-  //view->setTransform({ratio, 0, 0, ratio, 0, 0});
   imgTransform = QTransform{ ratio, 0, 0, ratio, 0, 0 };
   if (imageItem)
       imageItem->setTransform(imgTransform);
